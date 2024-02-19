@@ -106,7 +106,7 @@ export const useWumpusStore = defineStore('wumpus', {
           this.worldState.fluents = json.fluents;
           this.percepts = json.percepts;
         });
-    },
+    },/*
     async getHunterAction() {
       this.hunterState.percepts=this.percepts;
       fetch('http://localhost:8081/action', {
@@ -121,7 +121,29 @@ export const useWumpusStore = defineStore('wumpus', {
           this.hunterState = json.hunterState;
           this.action = json.action;
         });
-    },
+    }*/
+    async getHunterAction() {
+      this.hunterState.percepts = this.percepts;
+      try {
+        const response = await fetch('http://localhost:8081/action', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ...this.hunterState }),
+        });
+        const json = await response.json();
+        this.hunterState = json.hunterState;
+        this.action = json.action;
+        // 确保返回一个对象，其中包含需要的信息
+        return { hunterState: this.hunterState, action: this.action };
+      } catch (error) {
+        console.error('获取Hunter Action时发生错误:', error);
+        // 根据你的错误处理策略，你可以在这里抛出错误或返回一个错误标记
+        throw error; // 或者 return { error };
+      }
+    }
+    ,
   },
 });
 

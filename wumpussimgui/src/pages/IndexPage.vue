@@ -94,7 +94,7 @@ function exit() {
 
 async function requestHunterAction() {
   await wumpusStore.getHunterAction();
-  const act = wumpusStore.action;
-  //wumpusStore.performSimAction(act);
+  const action = wumpusStore.action;
+  wumpusStore.performSimAction(action);
 }
 </script>
