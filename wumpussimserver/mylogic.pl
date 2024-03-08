@@ -57,14 +57,14 @@ calculer_action_croyances(HunterBeliefs, Percepts, NewBeliefs, Action) :-
     ->wumpus_pos(HunterBeliefs.certain_fluents.fat_hunter.c, Dir, HunterBeliefs, Final_New_Eat_Wumpus, Safe,Final_New_Safe),
     New_certain_fluents=_{}.put(dir,Dir).put(fat_gold,Final_New_Safe).put(fat_hunter,HunterBeliefs.certain_fluents.fat_hunter).put(visited,HunterBeliefs.certain_fluents.visited),
     New_uncertain_eternals=_{}.put(eat_pit,HunterBeliefs.uncertain_eternals.eat_pit).put(eat_wumpus,Final_New_Eat_Wumpus),
-    NewBeliefs=_{}.put(certain_eternals,New_certain_fluents).put(certain_fluents,HunterBeliefs.certain_fluents).put(uncertain_eternals,New_uncertain_eternals),
+    NewBeliefs=_{}.put(certain_eternals,HunterBeliefs.certain_eternals).put(certain_fluents,HunterBeliefs.certain_fluents).put(uncertain_eternals,New_uncertain_eternals),
     Action=none
 
     ;member(breeze, Percepts), \+member(stench,Percepts)
     ->  pit_pos(HunterBeliefs.certain_fluents.fat_hunter.c, Dir, HunterBeliefs, Final_New_Eat_Pits, Safe,Final_New_Safe),
     New_certain_fluents=_{}.put(dir,Dir).put(fat_gold,Final_New_Safe).put(fat_hunter,HunterBeliefs.certain_fluents.fat_hunter).put(visited,HunterBeliefs.certain_fluents.visited),
     New_uncertain_eternals=_{}.put(eat_wumpus,HunterBeliefs.uncertain_eternals.eat_wumpus).put(eat_pit,Final_New_Eat_Pits),
-    NewBeliefs=_{}.put(certain_eternals,New_certain_fluents).put(certain_fluents,HunterBeliefs.certain_fluents).put(uncertain_eternals,New_uncertain_eternals),
+    NewBeliefs=_{}.put(certain_eternals,HunterBeliefs.certain_eternals).put(certain_fluents,HunterBeliefs.certain_fluents).put(uncertain_eternals,New_uncertain_eternals),
     Action=none
 
     ;member(breeze, Percepts), member(stench,Percepts)
