@@ -9,7 +9,7 @@
 
 
 %Ce code permet au hunter de trouver de gold lorsqu'il est chanceux
-%Ce code ne permet pas au hunter de rentrer au exit.
+%Ce code ne permet pas au chasseur de retourner à la sortie
 
 %calculer la position après s'avancer
 next_pos(c{x:X,y:Y}, north, _{x:X,y:Y1}) :- Y1 #= Y + 1.
@@ -17,7 +17,7 @@ next_pos(c{x:X,y:Y}, south, _{x:X,y:Y1}) :- Y1 #= Y - 1.
 next_pos(c{x:X,y:Y}, east, _{x:X1,y:Y}) :- X1 #= X + 1.
 next_pos(c{x:X,y:Y}, west, _{x:X1,y:Y}) :- X1 #= X - 1.
 
-%NewBeliefs après tourner à gauche et à droite
+%'NewBeliefs' après avoir tourné à gauche et à droite.
 turn_right(north,HunterBeliefs,NewBeliefs):- 
     New_certain_fluents=_{}.put(dir,east).put(fat_hunter,HunterBeliefs.certain_fluents.fat_hunter).put(visited,HunterBeliefs.certain_fluents.visited).put(fat_gold,HunterBeliefs.certain_fluents.fat_gold),
     NewBeliefs=_{}.put(certain_eternals,HunterBeliefs.certain_eternals).put(certain_fluents,New_certain_fluents).put(uncertain_eternals,HunterBeliefs.uncertain_eternals).
@@ -46,22 +46,22 @@ turn_left(west,HunterBeliefs,NewBeliefs):-
     NewBeliefs=_{}.put(certain_eternals,HunterBeliefs.certain_eternals).put(certain_fluents,New_certain_fluents).put(uncertain_eternals,HunterBeliefs.uncertain_eternals).
 
 
-%retirer la direction
+%extraire la direction
 get_dir(HunterBeliefs,Dir):-
     HunterBeliefs.certain_fluents.dir = [_{d:Dir, h:_}|_].
 get_dir(HunterBeliefs,Dir):-
     HunterBeliefs.certain_fluents.dir = Dir.
-%retirer la liste de visited
+%extraire la liste de visited
 get_visited(HunterBeliefs,Visited):-
     VisitedList = HunterBeliefs.certain_fluents.visited,
     (VisitedList = [] -> Visited = []; Visited = VisitedList).
 
-%trouver les cases sauves
+%Trouver les cases sûres
 safe_positions(_{x:X,y:Y}, HunterBeliefs, Final_Safe) :-
     findall(
         _{x:XAdj, y:YAdj},
         (
-            % calculer les coordonnées autour de hunter
+            % calculer les coordonnées autour du hunter
             (XAdj #= X+1, YAdj = Y;
              XAdj #= X-1, YAdj = Y;
              XAdj = X, YAdj is Y+1;  

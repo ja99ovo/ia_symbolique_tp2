@@ -5,13 +5,12 @@
 :- use_module(library(lists)).
 
 
-%pour déterminer les positions de pits. 
-%quand il se sent breeze mais il ne se sent pas stench en même temps, vérifier que si les quatres cases
-%se trouvent dans la liste eat_wumpus. Si il existe une case qui est dans eat_wumpus,
-%l'ajouter dans fat_gold car dans cette case il n'y a pas de wumpus
-%n'a pas cosidéré la condition que pit et wumpus se trouvent dans une même case.
+%Quand il ressent une brise mais pas d'odeur de puanteur en même temps, 
+%vérifier si les quatre cases se trouvent dans la liste 'eat_wumpus'. 
+%Si une case est présente dans 'eat_wumpus', l'ajouter dans 'fat_gold' car cela indique qu'il n'y a pas de Wumpus dans cette case. 
+%Cette logique ne prend pas en compte la condition où un puits et un Wumpus se trouvent dans la même case.
 
-%examiner les trois cases à côté et combiner les résultats ensemble
+%examiner les trois cases adjacentes et combiner les résultats ensemble
 pit_pos(c{x:X,y:Y}, north, HunterBeliefs, Final_New_Eat_pit, Safe,Final_New_Safe,Percepts):-
     pit_yp1(c{x:X,y:Y},HunterBeliefs,HunterBeliefs.uncertain_eternals.eat_pit,New1,Safe,New_Safe1,Percepts),
     pit_xm1(c{x:X,y:Y},HunterBeliefs,New1,New2,New_Safe1,New_Safe2,Percepts),
