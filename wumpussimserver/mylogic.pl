@@ -88,12 +88,17 @@ turn(HunterBeliefs, east,NewBeliefs, Action):-
 
     next_pos(c{x:X,y:Y}, east, _{x:X_east,y:Y_east}),
     next_pos(c{x:X,y:Y}, north, _{x:X_north,y:Y_north}),
-    (member(_{x:X_east,y:Y_east},HunterBeliefs.certain_fluents.fat_gold)
-    ->effect_move(HunterBeliefs,NewBeliefs),
-    Action=move
+    (\+member(_{x:X_north,y:Y_north},HunterBeliefs.uncertain_eternals.eat_pit),
+    \+member(_{x:X_north,y:Y_north},HunterBeliefs.uncertain_eternals.eat_wumpus),
+    \+member(_{c:_{x:X_north,y:Y_north},w:_},HunterBeliefs.certain_eternals.eat_walls)
+    ->turn_left(east,HunterBeliefs,NewBeliefs),
+    Action=left
     ;member(_{x:X_north,y:Y_north},HunterBeliefs.certain_fluents.fat_gold)
     ->turn_left(east,HunterBeliefs,NewBeliefs),
     Action=left
+    ;member(_{x:X_east,y:Y_east},HunterBeliefs.certain_fluents.fat_gold)
+    ->effect_move(HunterBeliefs,NewBeliefs),
+    Action=move
     ;turn_right(east,HunterBeliefs,NewBeliefs),
     Action=right
     ).
@@ -116,17 +121,15 @@ turn(HunterBeliefs, south,NewBeliefs, Action):-
 %只要发现金子就立刻捡起来
 calculer_action_croyances(HunterBeliefs, Percepts,  NewBeliefs, grab) :-
     member(glitter,Percepts),
-    NewBeliefs=HunterBeliefs.
+    New_certain_fluents=_{}.put(dir,HunterBeliefs.certain_fluents.dir).put(fat_gold,HunterBeliefs.certain_fluents.fat_gold).put(fat_hunter,HunterBeliefs.certain_fluents.fat_hunter).put(visited,HunterBeliefs.certain_fluents.visited).put(has_gold,yesyesyes),
+    NewBeliefs=_{}.put(certain_eternals,HunterBeliefs.certain_eternals).put(certain_fluents,New_certain_fluents).put(uncertain_eternals,HunterBeliefs.uncertain_eternals).
 
 
 calculer_action_croyances(HunterBeliefs, Percepts, NewBeliefs, Action) :-
     get_dir(HunterBeliefs,Dir),
     Safe=HunterBeliefs.certain_fluents.fat_gold,
     
-
-
-
-
+ 
     %只有臭味没有风
     ( member(stench,Percepts), \+member(breeze, Percepts)
     %判断是否在eat_pit或afat_gold里添加格子
