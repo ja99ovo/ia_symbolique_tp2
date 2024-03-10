@@ -6,15 +6,18 @@
 
 :- use_module(wumpus_position).
 :- use_module(pit_position2).
-%:- use_module(go).
 
-%计算前进后的位置
+
+%Ce code permet au hunter de trouver de gold lorsqu'il est chanceux
+%Ce code ne permet pas au hunter de rentrer au exit.
+
+%calculer la position après s'avancer
 next_pos(c{x:X,y:Y}, north, _{x:X,y:Y1}) :- Y1 #= Y + 1.
 next_pos(c{x:X,y:Y}, south, _{x:X,y:Y1}) :- Y1 #= Y - 1.
 next_pos(c{x:X,y:Y}, east, _{x:X1,y:Y}) :- X1 #= X + 1.
 next_pos(c{x:X,y:Y}, west, _{x:X1,y:Y}) :- X1 #= X - 1.
 
-%右转后的方向(未测试)
+%NewBeliefs après tourner à gauche et à droite
 turn_right(north,HunterBeliefs,NewBeliefs):- 
     New_certain_fluents=_{}.put(dir,east).put(fat_hunter,HunterBeliefs.certain_fluents.fat_hunter).put(visited,HunterBeliefs.certain_fluents.visited).put(fat_gold,HunterBeliefs.certain_fluents.fat_gold),
     NewBeliefs=_{}.put(certain_eternals,HunterBeliefs.certain_eternals).put(certain_fluents,New_certain_fluents).put(uncertain_eternals,HunterBeliefs.uncertain_eternals).
@@ -43,34 +46,39 @@ turn_left(west,HunterBeliefs,NewBeliefs):-
     NewBeliefs=_{}.put(certain_eternals,HunterBeliefs.certain_eternals).put(certain_fluents,New_certain_fluents).put(uncertain_eternals,HunterBeliefs.uncertain_eternals).
 
 
-%从HunterBeliefs获取目前朝向Dir
+%retirer la direction
 get_dir(HunterBeliefs,Dir):-
     HunterBeliefs.certain_fluents.dir = [_{d:Dir, h:_}|_].
 get_dir(HunterBeliefs,Dir):-
     HunterBeliefs.certain_fluents.dir = Dir.
-%以列表返回visited，有啥用忘了
+%retirer la liste de visited
 get_visited(HunterBeliefs,Visited):-
     VisitedList = HunterBeliefs.certain_fluents.visited,
     (VisitedList = [] -> Visited = []; Visited = VisitedList).
 
+%trouver les cases sauves
 safe_positions(_{x:X,y:Y}, HunterBeliefs, Final_Safe) :-
     findall(
         _{x:XAdj, y:YAdj},
         (
-            % 计算上下左右坐标
-            (XAdj #= X+1, YAdj = Y;  % 右
-             XAdj #= X-1, YAdj = Y;  % 左
-             XAdj = X, YAdj is Y+1;  % 上
-             XAdj = X, YAdj is Y-1), % 下
-            % 检查坐标是否不在walls列表中
+            % calculer les coordonnées autour de hunter
+            (XAdj #= X+1, YAdj = Y;
+             XAdj #= X-1, YAdj = Y;
+             XAdj = X, YAdj is Y+1;  
+             XAdj = X, YAdj is Y-1),
+            % trouver les cases qui ne se trouvent pas dans visited et walls
             \+ member(_{c:_{x:XAdj, y:YAdj},w:_}, HunterBeliefs.certain_eternals.eat_walls),
             \+ member(_{x:XAdj, y:YAdj}, HunterBeliefs.certain_fluents.fat_gold),
             \+ member(_{from:_{x:XAdj, y:YAdj},to:_},HunterBeliefs.certain_fluents.visited)
         ),
-        Safe%Safe应该被存储在fat_gold里
+        Safe%Safe est enregistré dans fat_gold
     ),
     append(Safe,HunterBeliefs.certain_fluents.fat_gold,Final_Safe).
 
+
+
+%Déterminer les prochaines actions en fonction de la direction
+%Maintenant, le chasseur ne peut que tenter de se déplacer autant que possible vers le haut à gauche.
 turn(HunterBeliefs, north,NewBeliefs, Action):-
     _{x:X,y:Y}=HunterBeliefs.certain_fluents.fat_hunter.c,
     next_pos(c{x:X,y:Y}, north, _{x:X_north,y:Y_north}),
@@ -118,7 +126,7 @@ turn(HunterBeliefs, south,NewBeliefs, Action):-
 
 
 
-%只要发现金子就立刻捡起来
+%Dès que gold est trouvé, le ramasser immédiatement
 calculer_action_croyances(HunterBeliefs, Percepts,  NewBeliefs, grab) :-
     member(glitter,Percepts),
     New_certain_fluents=_{}.put(dir,HunterBeliefs.certain_fluents.dir).put(fat_gold,HunterBeliefs.certain_fluents.fat_gold).put(fat_hunter,HunterBeliefs.certain_fluents.fat_hunter).put(visited,HunterBeliefs.certain_fluents.visited).put(has_gold,yesyesyes),
@@ -130,24 +138,24 @@ calculer_action_croyances(HunterBeliefs, Percepts, NewBeliefs, Action) :-
     Safe=HunterBeliefs.certain_fluents.fat_gold,
     
  
-    %只有臭味没有风
+    %quand il y a stench mais pas breeze
     ( member(stench,Percepts), \+member(breeze, Percepts)
-    %判断是否在eat_pit或afat_gold里添加格子
+    %faire l'appele à wumpus_pos pour ajouter les cases dans eat_wumpus
     ->wumpus_pos(HunterBeliefs.certain_fluents.fat_hunter.c, Dir, HunterBeliefs, Final_New_Eat_Wumpus, Safe,Final_New_Safe,Percepts),
     New_certain_fluents=_{}.put(dir,Dir).put(fat_gold,Final_New_Safe).put(fat_hunter,HunterBeliefs.certain_fluents.fat_hunter).put(visited,HunterBeliefs.certain_fluents.visited),
     New_uncertain_eternals=_{}.put(eat_pit,HunterBeliefs.uncertain_eternals.eat_pit).put(eat_wumpus,Final_New_Eat_Wumpus),
     NewBeliefs1=_{}.put(certain_eternals,HunterBeliefs.certain_eternals).put(certain_fluents,New_certain_fluents).put(uncertain_eternals,New_uncertain_eternals),
-    %Action=right%需按照NewBeliefs判断行动
+
     turn(NewBeliefs1,Dir,NewBeliefs,Action)
-    %只有风没有臭味
+    %quand il y a breeze mais pas stench
     ;member(breeze, Percepts), \+member(stench,Percepts)
     ->  pit_pos(HunterBeliefs.certain_fluents.fat_hunter.c, Dir, HunterBeliefs, Final_New_Eat_Pits, Safe,Final_New_Safe,Percepts),
     New_certain_fluents=_{}.put(dir,Dir).put(fat_gold,Final_New_Safe).put(fat_hunter,HunterBeliefs.certain_fluents.fat_hunter).put(visited,HunterBeliefs.certain_fluents.visited),
     New_uncertain_eternals=_{}.put(eat_wumpus,HunterBeliefs.uncertain_eternals.eat_wumpus).put(eat_pit,Final_New_Eat_Pits),
     NewBeliefs1=_{}.put(certain_eternals,HunterBeliefs.certain_eternals).put(certain_fluents,New_certain_fluents).put(uncertain_eternals,New_uncertain_eternals),
-    %Action=right
+
     turn(NewBeliefs1,Dir,NewBeliefs,Action)
-    %既有风又有臭味，没想好怎么处理
+    %quand il y a stench et breeze en même temps
     ;member(breeze, Percepts), member(stench,Percepts)
     ->  pit_pos(HunterBeliefs.certain_fluents.fat_hunter.c, Dir, HunterBeliefs, Final_New_Eat_Pits, Safe,Final_New_Safe1,Percepts),
     wumpus_pos(HunterBeliefs.certain_fluents.fat_hunter.c, Dir, HunterBeliefs, Final_New_Eat_Wumpus, Final_New_Safe1,Final_New_Safe2,Percepts),
@@ -157,7 +165,7 @@ calculer_action_croyances(HunterBeliefs, Percepts, NewBeliefs, Action) :-
     turn(NewBeliefs2,Dir,NewBeliefs,Action)
 
 
-    %没有风也没有臭味，前进。但没有检测前面有没有墙
+    %quand il n'y ni breeze ni stench, move
     ;\+member(breeze, Percepts), \+member(stench,Percepts)
     ->  
     safe_positions(HunterBeliefs.certain_fluents.fat_hunter.c,HunterBeliefs,Final_New_Safe),
@@ -169,6 +177,7 @@ calculer_action_croyances(HunterBeliefs, Percepts, NewBeliefs, Action) :-
     
     ).
 
+%les logiques pour déterminer l'action quand il n'y a pas de stench et breeze
 move(HunterBeliefs,north,NewBeliefs,Action):-
     _{x:X,y:Y}=HunterBeliefs.certain_fluents.fat_hunter.c,
     next_pos(c{x:X,y:Y}, north, _{x:X,y:Y1}),
@@ -199,7 +208,7 @@ move(HunterBeliefs,east,NewBeliefs,Action):-
     Action=right
     ).
 
-%前进要做的事，将自身位置按前进方向+1，将此路径以_{from:_{x:_,y:_},to:_{x:_,y:_}}加入visited列表
+%les effects d'avancement, calculer la position suivante et ajouter ce trajet dans visited en format _{from:_{x:_,y:_},to:_{x:_,y:_}}
 effect_move(HunterBeliefs, NewBeliefs):-
     get_dir(HunterBeliefs,Dir),
     get_visited(HunterBeliefs,Visited),
